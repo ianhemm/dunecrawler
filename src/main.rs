@@ -3,6 +3,7 @@ use std::collections::{VecDeque, HashMap};
 use reqwest::blocking::Client;
 use scraper::{Html, Selector};
 use std::{thread, time::Duration};
+use http::Uri;
 
 const QUEUE_RESULTS_MAX:usize = 100000; // number of results in the queue before the stop flag is raised
 const QUEUE_THREADS:u8 = 4; // number of threads to spawn in the thread pool
@@ -43,7 +44,6 @@ fn main() {
         let mut links: Vec<String> = Vec::new();
         if let Some(link) = queue.pop_front() {
             println!("Parsing link: {}", &link);
-            // request its head
             let response = match client
                 .get(link.clone())
                 .send() {
@@ -63,7 +63,15 @@ fn main() {
 
             // normalize the link
             links = links.into_iter().map(|mut x| {
-                if x.starts_with('/') {
+                // get the current domain of the site
+                let uri = link.parse::<Uri>().unwrap();
+                let host = uri.host().unwrap();
+                if x.starts_with('/') { // '/' is the root level, meaning we will have to use the top level
+                    x.insert_str(0, &String::from("https://".to_owned() + host));
+                }
+                if x.starts_with('.'){
+                    x.remove(0);
+                    x.remove(0);
                     x.insert_str(0, &String::from(&link));
                 }
 
