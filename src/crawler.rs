@@ -4,6 +4,7 @@ use std::collections::{
 };
 use super::LinkResult;
 
+
 pub struct Crawler {
     stop: bool,
     queue: VecDeque<LinkResult>,
@@ -57,13 +58,49 @@ impl Crawler {
 
     pub fn set_stop(self: &mut Self,stop: bool){
         self.stop = stop; 
-    }
-
-    pub fn results(self: &mut Self) -> Vec<&LinkResult> {
+    } pub fn results(self: &mut Self) -> Vec<&LinkResult> {
         let result: Vec<&LinkResult> = self.results.iter().map(|x| {
             x.1
         }).collect();
 
         result
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Crawler;
+
+    #[test]
+    fn crawler_init(){
+        let mut crawler = Crawler::new(&["https://example.org/"]);
+
+        assert_eq!("https://example.org/", crawler.pop_link().expect("No link found in queue!").name());
+        assert!(crawler.pop_link().is_none())
+    }
+
+    #[test]
+    fn crawler_queue(){
+        let mut crawler = Crawler::new(&["https://example.org/"]);
+
+        assert_eq!(1, crawler.queue_len());
+        let _ = crawler.pop_link();
+        assert_eq!(0, crawler.queue_len());
+        crawler.submit("https://example.org/test/", 100.0);
+        assert_eq!(1, crawler.queue_len());
+        crawler.submit("https://example.org/test/", 100.0);
+        assert_eq!(1, crawler.queue_len());
+    }
+
+    #[test]
+    fn crawler_results() {
+        let mut crawler = Crawler::new(&["https://example.org/"]);
+
+        crawler.submit("https://example.org/test/", 100.0);
+        crawler.submit("https://example.org/test/", 100.0);
+        let results = crawler.results();
+        let first_result = results.first().expect("No link was found in results!");
+        assert_eq!("https://example.org/test/", first_result.name());
+        assert_eq!(200.0, first_result.weight());
     }
 }
