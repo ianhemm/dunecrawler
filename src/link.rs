@@ -25,11 +25,7 @@ pub struct Link<State: LinkState>{
 
 impl<State: LinkState> Link<State> {
 
-    pub fn default() -> Link<ResultLink> {
-        Link{name: "".to_string(), state: ResultLink {weight: 0.0}}
-    }
-
-    pub fn name(self: &Self) -> String {
+    pub fn name(&self) -> String {
         String::from(&self.name)
     }
 }
@@ -39,8 +35,8 @@ impl Link<RawLink>{
         Link{name: String::from(link), state: RawLink}
     }
 
-    pub fn normalize(self: &Self, parent: &Link<ResultLink>) -> Link<NormalizedLink> {
-        let mut link = String::from(self.name());
+    pub fn normalize(&self, parent: &Link<ResultLink>) -> Link<NormalizedLink> {
+        let mut link = self.name();
 
         if link.starts_with('/') { // '/' is the root level, meaning we will have to use the top level
             let uri = parent.name().parse::<Uri>().unwrap();
@@ -68,7 +64,7 @@ impl Link<NormalizedLink> {
      * API implementation of link_traverse(&String) requiring that the link is normalized
      *
      */
-    pub fn traverse(self: &Self) -> Vec<Link<NormalizedLink>> {
+    pub fn traverse(&self) -> Vec<Link<NormalizedLink>> {
         let mut result: Vec<Link<NormalizedLink>> = vec![];
         for link in link_traverse(&self.name()) {
             // If the parent link is already normalized, 
@@ -81,7 +77,7 @@ impl Link<NormalizedLink> {
         result
     }
 
-    pub fn submit(self: Self, data: ResultLink) -> Link<ResultLink> {
+    pub fn submit(self, data: ResultLink) -> Link<ResultLink> {
         Link {
             name: self.name, 
             state: data 
@@ -89,14 +85,21 @@ impl Link<NormalizedLink> {
     }
 }
 
+impl Default for Link<ResultLink> {
+    fn default() -> Link<ResultLink> {
+        Link{name: "".to_string(), state: ResultLink {weight: 0.0}}
+    }
+}
+
 impl Link<ResultLink> {
-    pub fn weight(self: &Self) -> f64 {
+    pub fn weight(&self) -> f64 {
         self.state.weight
     }
-    pub fn add_weight(self: &mut Self, weight: f64) {
+    pub fn add_weight(&mut self, weight: f64) {
         self.state.weight += weight
     }
 }
+
 
 /**
  * Takes a normalized link and
@@ -124,7 +127,7 @@ fn link_traverse(link: &str) -> Vec<String>{
     //println!("{}", path);
 
     let mut path_builder = format!("https://{}",host);
-    for link in path.split("/"){
+    for link in path.split('/'){
         if !link.is_empty() { // deals with split accidentally treating the whitespace before the 
                               // first '/' as its own empty string
             result.push(String::from(&path_builder));

@@ -32,11 +32,11 @@ impl Crawler {
          crawler
     }
 
-    pub fn queue_len(self: &Self) -> usize {
+    pub fn queue_len(&self) -> usize {
         self.queue.len()
     }
 
-    pub fn submit(self: &mut Self, link: Link<NormalizedLink>, weight: f64){
+    pub fn submit(&mut self, link: Link<NormalizedLink>, weight: f64){
         if let Some(result) = self.results.get_mut(&link.name()){
             result.add_weight(weight);
         } else {
@@ -49,17 +49,19 @@ impl Crawler {
         }
     }
 
-    pub fn pop_link(self: &mut Self) -> Option<Link<ResultLink>>{
+    pub fn pop_link(&mut self) -> Option<Link<ResultLink>>{
         self.queue.pop_front()
     }
 
-    pub fn stop(self: &Self) -> bool {
+    pub fn stop(&self) -> bool{
         self.stop
     }
 
-    pub fn set_stop(self: &mut Self,stop: bool){
+    pub fn set_stop(&mut self,stop: bool){
         self.stop = stop; 
-    } pub fn results(self: &mut Self) -> Vec<&Link<ResultLink>> {
+    } 
+
+    pub fn results(&mut self) -> Vec<&Link<ResultLink>> {
         let result: Vec<&Link<ResultLink>> = self.results.iter().map(|x| {
             x.1
         }).collect();

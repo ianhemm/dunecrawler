@@ -62,7 +62,7 @@ fn main() {
     results.sort_by(|a,b|{
         a.weight()
             .partial_cmp(&b.weight())
-            .unwrap_or_else(||{Ordering::Less})});
+            .unwrap_or(Ordering::Less)});
 
     results.into_iter().for_each(|x| println!("{}:{}",x.name(), x.weight()));
 }

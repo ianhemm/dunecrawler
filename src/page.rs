@@ -22,7 +22,7 @@ impl Page {
         page
     }
 
-    pub fn links(self: Self) -> Vec<String> {
+    pub fn links(self) -> Vec<String> {
         self.links
     }
 }
