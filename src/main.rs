@@ -27,11 +27,11 @@ fn main() {
     let mut crawler = Crawler::new(INITIAL_SEED);
 
     // while we have links in the queue
-    while let Some(link) = crawler.pop_link() {
+    while let Some(parent) = crawler.pop_link() {
         // take the next link in the queue
-        println!("Crawling link: {}", &link.name());
+        println!("Crawling link: {}", &parent.name());
         let response = match client
-            .get(link.name().clone())
+            .get(parent.name().clone())
             .send() {
                 Ok(result) => result,
                 Err(..) => continue,
@@ -42,7 +42,7 @@ fn main() {
 
         let mut temp = Vec::new();
         links.into_iter()
-            .map(|x| Link::new(&x).normalize(&link))
+            .map(|x| Link::new(&x).normalize(&parent))
             .for_each(|x| temp.append(&mut x.traverse()));
         let links = temp;
 
@@ -51,7 +51,7 @@ fn main() {
         // the goal is to have a weight which wont explode too quickly
         // (ideally slower than +1 weight per link)
         // but at the same time accurately put links that appear more higher on the list
-        let linkweight = ((link.weight() * 10.0)
+        let linkweight = ((parent.weight() * 10.0)
                           / links.len() as f64)
                         .log2();
 
