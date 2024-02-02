@@ -2,10 +2,7 @@ use std::collections::{
     HashMap,
     VecDeque
 };
-use crate::NormalizedLink;
-
-use super::{Link,RawLink,ResultLink};
-
+use crate::link::*;
 
 pub struct Crawler {
     stop: bool,
@@ -73,7 +70,7 @@ impl Crawler {
 
 #[cfg(test)]
 mod test {
-    use crate::{NormalizedLink, Link};
+    use crate::link::{Link,NormalizedLink};
 
     use super::Crawler;
 

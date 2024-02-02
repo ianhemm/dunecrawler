@@ -3,8 +3,7 @@ use core::cmp::Ordering;
 use reqwest::blocking::Client;
 use std::{thread, time::Duration};
 
-use dunecrawler::crawler::Crawler;
-use dunecrawler::{Link,Page};
+use dunecrawler::{Crawler,Link,Page};
 
 const INITIAL_SEED: &[&str] = &[
         "https://wikipedia.org",
@@ -17,13 +16,7 @@ const _QUEUE_THREADS:u8 = 4; // number of threads to spawn in the thread pool
 
 fn main() {
     let _database = ""; // database to cache results in
-
     let client = Client::new();
-    // let mut crawler = Crawler::new(&[
-    //     "https://wikipedia.org",
-    //     "https://neocities.org/browse",
-    //     "https://youtube.com",
-    // ]);
     let mut crawler = Crawler::new(INITIAL_SEED);
 
     // while we have links in the queue
@@ -34,7 +27,8 @@ fn main() {
             .get(parent.name().clone())
             .send() {
                 Ok(result) => result,
-                Err(..) => continue,
+                Err(..) => continue, // TODO: Add error messages to log output to see potential
+                                     // patterns.
             };
 
         let page = Page::parse(&response.text().unwrap());
