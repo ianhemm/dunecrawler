@@ -2,14 +2,15 @@ use std::collections::{
     HashMap,
     VecDeque
 };
-use super::LinkResult;
+use crate::NormalizedLink;
+
+use super::{Link,RawLink,ResultLink};
 
 
 pub struct Crawler {
     stop: bool,
-    queue: VecDeque<LinkResult>,
-    results: HashMap<String, LinkResult>,
-    _database: Option<sqlite3::Connection>,
+    queue: VecDeque<Link<ResultLink>>,
+    results: HashMap<String, Link<ResultLink>>,
 }
 
 impl Crawler {
@@ -18,10 +19,17 @@ impl Crawler {
              stop: false,
              queue: VecDeque::new(),
              results: HashMap::new(),
-             _database: None,
          };
          seed.iter().for_each(|x| {
-            crawler.queue.push_back(LinkResult::new(x, 100.0));
+            // the seed links need to be valid for the code to work
+            // the normalize function should catch these as the method
+            // requires a valid URI
+            // FIXME: make Link::normalize() return a Result to handle this error more gracefully,
+            // as the link seed will be a user input in the future,
+            // or have a validate() method return a bool
+            let link: Link<RawLink> = Link::<RawLink>::new(x);
+            let link = link.normalize(&Link::<ResultLink>::default());
+            crawler.queue.push_back(link.submit(ResultLink {weight: 100.0}));
          });
         
          crawler
@@ -31,24 +39,20 @@ impl Crawler {
         self.queue.len()
     }
 
-    pub fn submit(self: &mut Self, link: &str, weight: f64){
-        if let Some(result) = self.results.get_mut(link){
+    pub fn submit(self: &mut Self, link: Link<NormalizedLink>, weight: f64){
+        if let Some(result) = self.results.get_mut(&link.name()){
             result.add_weight(weight);
         } else {
+            let link = link.submit(ResultLink { weight });
             if !self.stop(){
-                self.queue.push_back(
-                    LinkResult {
-                        name: String::from(link), 
-                        weight});
+                self.queue.push_back(link.clone());
             }
-            self.results.insert(String::from(link),
-                LinkResult {
-                    name: String::from(link), 
-                    weight});
+            self.results.insert(String::from(&link.name()), 
+                                link);
         }
     }
 
-    pub fn pop_link(self: &mut Self) -> Option<LinkResult>{
+    pub fn pop_link(self: &mut Self) -> Option<Link<ResultLink>>{
         self.queue.pop_front()
     }
 
@@ -58,8 +62,8 @@ impl Crawler {
 
     pub fn set_stop(self: &mut Self,stop: bool){
         self.stop = stop; 
-    } pub fn results(self: &mut Self) -> Vec<&LinkResult> {
-        let result: Vec<&LinkResult> = self.results.iter().map(|x| {
+    } pub fn results(self: &mut Self) -> Vec<&Link<ResultLink>> {
+        let result: Vec<&Link<ResultLink>> = self.results.iter().map(|x| {
             x.1
         }).collect();
 
@@ -69,6 +73,8 @@ impl Crawler {
 
 #[cfg(test)]
 mod test {
+    use crate::{NormalizedLink, Link};
+
     use super::Crawler;
 
     #[test]
@@ -86,9 +92,15 @@ mod test {
         assert_eq!(1, crawler.queue_len());
         let _ = crawler.pop_link();
         assert_eq!(0, crawler.queue_len());
-        crawler.submit("https://example.org/test/", 100.0);
+        crawler.submit(Link { 
+                name: "https://example.org/test/".to_string(), 
+                state: NormalizedLink}, 
+            100.0);
         assert_eq!(1, crawler.queue_len());
-        crawler.submit("https://example.org/test/", 100.0);
+        crawler.submit(Link { 
+                name: "https://example.org/test/".to_string(), 
+                state: NormalizedLink}, 
+            100.0);
         assert_eq!(1, crawler.queue_len());
     }
 
@@ -96,8 +108,14 @@ mod test {
     fn crawler_results() {
         let mut crawler = Crawler::new(&["https://example.org/"]);
 
-        crawler.submit("https://example.org/test/", 100.0);
-        crawler.submit("https://example.org/test/", 100.0);
+        crawler.submit(Link { 
+                name: "https://example.org/test/".to_string(), 
+                state: NormalizedLink}, 
+            100.0);
+        crawler.submit(Link { 
+                name: "https://example.org/test/".to_string(), 
+                state: NormalizedLink}, 
+            100.0);
         let results = crawler.results();
         let first_result = results.first().expect("No link was found in results!");
         assert_eq!("https://example.org/test/", first_result.name());
